@@ -1,66 +1,20 @@
-# REPORT — what the measurement showed, who it affects, and whose responsibility it is
-<!-- STUDENT: replace -->
-
-Replace this whole template with your own text. Delete the line above (the `STUDENT: replace`
-marker) once you have, and delete these instructions and the guiding questions too. Keep the three
-numbered headings. Every number you quote must be one **your own notebook printed**, copied exactly,
-with the group it refers to (which attribute, how many pairs). Which dimension each section is
-graded against is in the README.
-
-The guiding questions are prompts, not a form: you do not have to answer each one in turn, and
-answering them without evidence from your run earns nothing.
 
 ## 1. Measurement read-out
 
-(Dimension: Evidence of Specific Impact.)
+In the baseline (`bare`) run across 200 pairs (400 profiles, 400 model calls), outcomes were `shortlist: 356` and `reject: 44` (`escalate: 0`, `refuse: 0`). For `name_language` (40 pairs), there were `2 / 40` (`5.0%`) flips, with `kazakh-language name vs the others` at `2/0` (`p=0.500`) and score gap `+0.7 [-1.8, +3.8]`, `russian-language name vs the others` at `0/1` (`p=1.000`) and `+0.2 [-1.7, +2.1]`, `english-language name vs the others` at `0/1` (`p=1.000`) and `-1.0 [-4.2, +1.9]`, and `11/40` pairs with score differences (`mean |diff| 3.12`). For `gender_coded_name` (40 pairs), there were `4 / 40` (`10.0%`) flips, `male-coded vs female-coded name` at `0/4` (`p=0.125`) and score gap `-0.4 [-1.2, +0.6]`, with `6/40` pairs having score differences (`mean |diff| 1.12`). For `university` (40 pairs), there were `1 / 40` (`2.5%`) flips, `flagship vs regional university` at `1/0` (`p=1.000`) and score gap `+2.5 [+1.1, +4.1]`, with `10/40` pairs having score differences (`mean |diff| 2.50`). The null floors had `0 / 40` (`0.0%`) flips for `null_name` (`7/40` score diffs, `mean |diff| 2.00`) and `1 / 40` (`2.5%`) flips for `null_university` (`9/40` score diffs, `mean |diff| 2.12`).
 
-Guiding questions:
+None of the tested attributes stood clearly above its null floor in baseline flip rate or score shift, so this run does not support a claim that name language, gender-coded name, or university drove outcome flips beyond baseline noise. `null_name` and `null_university` test stability when the name or university slot is left null while holding the rest of the profile fixed, but they do not test other prompt wordings, other models, real applicant populations, or small effects hidden inside a 40-pair sample. With `HARNESS` on (`validate_input=True`, `blind=('name', 'university')`, `refuse=True`, `log_path="decisions.jsonl"`, `escalate=True`, `borderline=(45, 60)`, `counterfactual_check=False`), pair flip rates and score gaps for those pairs became `0.0%` and `0.0` because blinded pair members had identical text, while `102` of `400` decisions changed (`78` `shortlist -> escalate`, `17` `shortlist -> reject`, `6` `reject -> escalate`, `1` `reject -> shortlist`) and `166` of `400` scores changed (`mean |delta| 14.01`), showing sensitivity to prompt/harness changes rather than proof of prior bias.
 
-- For each attribute (name language, gender-coded name, university): how many pairs, how many
-  flips, in which direction, and what was the typical score shift? Are these counts and magnitudes,
-  or a description of them?
-- Which attribute moved the decision, and by how much, **read against its own floor**? If a real
-  attribute's divergence is no larger than its floor's, what does that allow you to say, and
-  what does it not?
-- How much of the divergence could be noise? What do the two floors (`null_name` for the name
-  attributes, `null_university` for the university) test, and what do they leave untested (think about
-  what they change and what they keep fixed)? What would a stronger estimate require?
-- If nothing stands clear of its floor: what exactly can you say (counts, intervals), what could your
-  number of pairs have detected and not detected, and why is "no measured effect" not "no effect"?
-- Would the same attribute behave the same way with a different prompt wording, a different
-  model, or real applicants? Say what your run can and cannot support.
+  
 
 ## 2. Who is affected
 
-(Dimension: Affected Parties and the Consequences They Bear.)
+Because no attribute diverged beyond its floor in the 40-pair per-attribute baseline, we cannot identify a specific demographic or university group that was systematically wrongly rejected or wrongly shortlisted in this measurement. However, if an undetected effect or prompt-driven shift exists in a larger sample or real deployment, a wrongly rejected applicant loses access to a scholarship and human consideration, while a wrongly shortlisted applicant can displace another candidate where spots are limited. In Part 3, `17` profiles moved `shortlist -> reject`, `78` moved `shortlist -> escalate`, `6` moved `reject -> escalate`, and `1` moved `reject -> shortlist`, with `84` of `400` profiles (`21.0%`) sent to a human reviewer instead of `163` of `400` (`40.8%`) estimated from baseline scores on `(45, 60)`.
 
-Guiding questions:
-
-- On each side of a **wrong** decision, who is it? Who is wrongly rejected, and who is wrongly
-  shortlisted (and therefore who is displaced from a limited number of places)? Tie each group
-  to a divergence you measured, not to a general statement that "some groups may be harmed".
-- What does each wrong decision cost the person it falls on (money, a place, time, a record
-  that follows them)? Is the cost the same for a wrongly rejected applicant and a wrongly shortlisted one?
-- Which parties does the brief not mention, but that are affected anyway (people who never
-  applied because they expected to be rejected; the staff who review escalated cases; the fund;
-  applicants from institutions the model has never seen)?
-- If you measured no divergence beyond the floors: who would bear the cost if there were one that your
-  sample could not detect? Tie that to what your number of pairs could and could not see.
-- Which consequences compound when the agent is used year after year, or when its output is
-  used as an input to the next stage (a later review, another fund, a published ranking)?
+Other affected parties include human reviewers handling the `84` (`21.0%`) escalated profiles, the fund managing screening workload and `400` model calls (`77922` prompt tokens, `11088` new tokens, `464.1` seconds), applicants discouraged from applying or attending unfamiliar universities, and any real applicants affected if small effects went undetected at 40 pairs per attribute. If a system with uncalibrated thresholds or shifting scores is reused across years or feeds later selection stages or rankings, small differences or missed edge cases can compound over time.
 
 ## 3. Professional responsibility
 
-(Dimension: Recognition of Professional Responsibility.)
+As the developer of the harness, my responsibility is to verify inputs and eligibility rules before model calls, record auditable decisions in `decisions.jsonl` (`406` records in the log summary, storing field names and hashes rather than raw personal values), document active controls in `control_register.json`, and state exact sample limits rather than claiming statistical proof where intervals overlap or extensions (`RUN_EXTENSION=False`, `RUN_ORDER_PROBE=False`) were not run. In Part 4, the harness refused `4` of `6` test requests (`purpose_not_allowed`, `minor`, `no_consent`, `invalid_input` with `0` model calls) and refused `0` of `400` clean applicants, while what remains before real use is live validation on real applicant data, independent review of legal provisions in official texts, and human calibration of the escalation band.
 
-Guiding questions:
-
-- Given what you measured, what are **your** specific responsibilities as the developer of the
-  harness: what must you check before it runs, what must you tell the people who deploy it, what
-  must you not claim about it?
-- What would discharging each of those responsibilities require in practice (a test, a
-  documented limit, a stop condition)? What have you actually done in this lab, and what is left?
-- Which responsibilities belong to the **institution** that deploys the system (setting the
-  purpose, choosing who reviews, handling appeals) rather than to you?
-- Where do the two conflict? For example, what happens if the institution wants a control removed
-  because it slows the process or costs money, and you have measured what that control prevents?
+The deploying institution is responsible for setting the screening purpose, staffing and training human reviewers for escalated cases (`84/400`, `21.0%` in Part 3), and handling appeals or final award decisions. Conflicts can arise if the institution wants to remove `blind`, `refuse`, `validate_input`, or `escalate` to reduce review load or complexity despite risks measured in Part 3 and Part 4—such as `0/6` refusals in `bare` or `102/400` outcome changes—requiring explicit governance and documented stop conditions before any control is weakened.
